@@ -5,7 +5,7 @@ from langchain.mcp import MCPAdapter
 from dotenv import load_dotenv
 load_dotenv()
 import asyncio
-from tools import list_directory, read_safe_file
+from tools import list_directory, read_safe_file, write_safe_file
 import logging
 logging.getLogger("google_genai").setLevel(logging.ERROR)
 logging.getLogger("langchain_google_genai._function_utils").setLevel(logging.ERROR)
@@ -34,8 +34,11 @@ async def main():
                 "args": [
                     "-y",
                     "@modelcontextprotocol/server-memory"
-                ]
-            },
+                ],
+                "env": {
+                   "MEMORY_FILE_PATH": r"C:\Users\BuffBard\Documents\Folder\AI_folder\memory.txt"
+                }
+                },
             "filesystem": {
             "command": "npx",
             "args": [
@@ -51,7 +54,7 @@ async def main():
         mcpTools = await adapter.list_tools()
         agent = create_agent(
             model="google_genai:gemini-flash-lite-latest",
-            tools=[read_safe_file, list_directory,*mcpTools],
+            tools=[write_safe_file, read_safe_file, list_directory,*mcpTools],
             checkpointer=InMemorySaver(),
         )
         thread_config = {"configurable": {"thread_id": uuid.uuid4()}}

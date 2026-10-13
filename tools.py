@@ -1,10 +1,8 @@
 from fnmatch import fnmatch
 from pathlib import Path
 
-# Files outside this directory can never be accessed by the agent.
 SAFE_ROOT = Path(__file__).resolve().parent
 
-# Names the agent may not read or see, matched against every path component.
 SENSITIVE_PATTERNS = [".env", ".env.*"]
 
 
@@ -20,11 +18,9 @@ def _is_allowed(resolved: Path) -> bool:
 
 
 def _resolve_safe(path: str) -> Path:
-    # resolve() collapses ".." and follows symlinks, so the check below
-    # sees the real location.
+    """Whether a resolved path allowed through permissions."""
     target = (SAFE_ROOT / path).resolve()
 
-    # Use one generic error for every case so we don't leak which paths exist.
     if not _is_allowed(target):
         raise PermissionError("Access denied or file not found.")
 
@@ -42,6 +38,19 @@ def read_safe_file(path: str) -> str:
         raise PermissionError("Access denied or file not found.")
 
     return target.read_text(encoding="utf-8")
+
+def write_safe_file(path: str, content: str) -> str:
+    """Write a UTF-8 text file from the project directory.
+
+    Args:
+        path: File path relative to the project root, e.g. "docs/readme.txt"
+        content: what to write to file.
+    """
+    target = _resolve_safe(path)
+    if not target.is_file():
+        raise PermissionError("Access denied or file not found.")
+
+    return target.write_text(content, encoding="utf-8")
 
 
 def list_directory(path: str = ".") -> str:
